@@ -42,20 +42,20 @@ function reCalc() {
 					<td width="150" class="box-sel-head"><?php echo $GLOBALS['language']['transfers']['del_older_than']; ?></td>
 					<td width="*" class="box-sel" align="right">
 						<select name="frm_date_selector" style="width: 538px;" onChange="reCalc();">
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("now"))) ?>"><?php echo $GLOBALS['language']['general']['time_now']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("-1 day"))) ?>"><?php echo $GLOBALS['language']['general']['time_24h']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("-1 week"))) ?>"><?php echo $GLOBALS['language']['general']['time_1week']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("-2 weeks"))) ?>"><?php echo $GLOBALS['language']['general']['time_2week']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("-1 month"))) ?>"><?php echo $GLOBALS['language']['general']['time_1month']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("-3 months"))) ?>"><?php echo $GLOBALS['language']['general']['time_3month']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("-6 months"))) ?>"><?php echo $GLOBALS['language']['general']['time_6month']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("-1 year"))) ?>"><?php echo $GLOBALS['language']['general']['time_1year']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("now"))) ?>"><?php echo $GLOBALS['language']['general']['time_now']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("-1 day"))) ?>"><?php echo $GLOBALS['language']['general']['time_24h']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("-1 week"))) ?>"><?php echo $GLOBALS['language']['general']['time_1week']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("-2 weeks"))) ?>"><?php echo $GLOBALS['language']['general']['time_2week']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("-1 month"))) ?>"><?php echo $GLOBALS['language']['general']['time_1month']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("-3 months"))) ?>"><?php echo $GLOBALS['language']['general']['time_3month']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("-6 months"))) ?>"><?php echo $GLOBALS['language']['general']['time_6month']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("-1 year"))) ?>"><?php echo $GLOBALS['language']['general']['time_1year']; ?>
 						</select>
 					</td>
 				</tr>
 				<tr>
 					<td width="150" class="box-sel-head"><?php echo $GLOBALS['language']['userv']['customdate']; ?>:</td>
-					<td width="*" class="box-sel" align="right"><input type="text" style="width: 536px;" size="105" name="frm_date" value="<?php echo strftime("%Y-%m-%d %H:%M:%S",strtotime("now")); ?>"></td>
+					<td width="*" class="box-sel" align="right"><input type="text" style="width: 536px;" size="105" name="frm_date" value="<?php echo date('Y-m-d H:i:s', strtotime("now")); ?>"></td>
 				</tr>
 			</table>
 		</form>

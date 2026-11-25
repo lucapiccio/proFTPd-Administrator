@@ -3,8 +3,8 @@ require_once('class_system.php');
 require_once('class_system_Linux.php');
 
 class BSD extends System {
-	var $is_fetched_kernel_conf = 0;
-	var $fetched_kernel_conf 	= array();
+	public $is_fetched_kernel_conf = 0;
+	public $fetched_kernel_conf 	= array();
 
 	public function __construct() {
 	}
@@ -15,7 +15,7 @@ class BSD extends System {
 
 	function get_kernelversion() {
 		$version = $this->__get_sysctl__('kern.version');
-		$version = explode(':', $version[0]);
+		$version = explode(':', $version[0] ?? '');
 		return $version[0];
 	}
 
@@ -26,7 +26,7 @@ class BSD extends System {
 
 	function get_systemload(){
 		$load = $this->__get_sysctl__('vm.loadavg');
-		$load = substr($load[0], 2, -2);
+		$load = substr($load[0] ?? '', 2, -2);
 		return '<acronym title="Load average of the system over the last 1, 5, and 15 minutes">' . $load . '</acronym>';
 	}
 
@@ -46,9 +46,9 @@ class BSD extends System {
 				$last_id = $line[0];
 			}
 		}
-		$data_array['kern.malloc'] = '<pre>' . $data_array['kern.malloc'] . '<pre>';
-		$data_array['vm.vmtotal'] = '<pre>' . $data_array['vm.vmtotal'] . '<pre>';
-		$data_array['vm.zone'] = '<pre>' . $data_array['vm.zone'] . '<pre>';
+		$data_array['kern.malloc'] = '<pre>' . ($data_array['kern.malloc'] ?? '') . '<pre>';
+		$data_array['vm.vmtotal'] = '<pre>' . ($data_array['vm.vmtotal'] ?? '') . '<pre>';
+		$data_array['vm.zone'] = '<pre>' . ($data_array['vm.zone'] ?? '') . '<pre>';
 		ksort($data_array);
 		return $data_array;
 	}
@@ -85,8 +85,8 @@ class BSD extends System {
 				$line = trim($line);
 
 				if (empty($line) || $line[0] == '#') continue;
-				$line = preg_split("/\s+/", $line, 3);
-				if(!empty($line[2]) && $line[2][1] != ' ') $line[2] = '# ' . substr($line[2], 1);
+				$line = array_pad(preg_split("/\s+/", $line, 3), 3, '');
+				if(strlen($line[2]) > 1 && $line[2][1] != ' ') $line[2] = '# ' . substr($line[2], 1);
 				$data_array[$line[0]][$line[1]] = $line[2];
 			}
 			$this->is_fetched_kernel_conf = 1;

@@ -2,8 +2,8 @@
 require_once('class_system.php');
 
 class WINNT extends System {
-	var $is_fetched_sysctl 	= 0;
-	var $fetched_sysctl 	= array();
+	public $is_fetched_sysctl 	= 0;
+	public $fetched_sysctl 	= array();
 
 	public function __construct() {
 	}
@@ -14,19 +14,19 @@ class WINNT extends System {
 
 	function get_kernelversion() {
 		$this->__fetch_sysctl__();
-		return $this->fetched_sysctl['os.producttype'];
+		return $this->fetched_sysctl['os.producttype'] ?? 'N.A.';
 	}
 
 	function get_uptime() {
 		$this->__fetch_sysctl__();
 		return '<acronym title="Because of limitations in Win32-API, uptime will wrap to zero every 49,7 days.">'	.
-				$this->__convert_seconds__($this->fetched_sysctl['misc.tickcount']) .
+				$this->__convert_seconds__($this->fetched_sysctl['misc.tickcount'] ?? 0) .
 				'</acronym>';;
 	}
 
 	function get_systemload() {
 		$this->__fetch_sysctl__();
-		return $this->fetched_sysctl['mem.memory_load'] . ' % memory';
+		return ($this->fetched_sysctl['mem.memory_load'] ?? 'N.A.') . ' % memory';
 	}
 
 	function get_resource_hd() {
@@ -41,7 +41,7 @@ class WINNT extends System {
 			$disk['megabyte_free'] 	= $data[$mnt][408][0];
 			$disk['megabyte_used'] 	= $data[$mnt][408][1] - $data[$mnt][408][0];
 			$disk['megabyte_total'] = $data[$mnt][408][1];
-			$disk['percent_used'] 	= floor(($disk['megabyte_used'] / $disk['megabyte_total']) * 100);
+			$disk['percent_used'] 	= ($disk['megabyte_total'] > 0) ? floor(($disk['megabyte_used'] / $disk['megabyte_total']) * 100) : 0;
 			$disk['percent_free'] 	= (100 - $disk['percent_used']);
 
 			array_push($hd_info, $disk);
@@ -54,17 +54,17 @@ class WINNT extends System {
 		$mem_info = array();
 
 		$mem_info[0]['mountpoint'] 		= 'Physical';
-		$mem_info[0]['megabyte_total']	= $this->fetched_sysctl['mem.physmem_total'] / 1024 / 1024;
-		$mem_info[0]['megabyte_free'] 	= $this->fetched_sysctl['mem.physmem_available'] / 1024 / 1024;
+		$mem_info[0]['megabyte_total']	= (float)($this->fetched_sysctl['mem.physmem_total'] ?? 0) / 1024 / 1024;
+		$mem_info[0]['megabyte_free'] 	= (float)($this->fetched_sysctl['mem.physmem_available'] ?? 0) / 1024 / 1024;
 		$mem_info[0]['megabyte_used'] 	= $mem_info[0]['megabyte_total'] - $mem_info[0]['megabyte_free'];
-		$mem_info[0]['percent_used']	= floor(($mem_info[0]['megabyte_used'] / $mem_info[0]['megabyte_total']) * 100);
+		$mem_info[0]['percent_used']	= ($mem_info[0]['megabyte_total'] > 0) ? floor(($mem_info[0]['megabyte_used'] / $mem_info[0]['megabyte_total']) * 100) : 0;
 		$mem_info[0]['percent_free'] 	= (100 - $mem_info[0]['percent_used']);
 
 		$mem_info[1]['mountpoint'] 		= 'Page file';
-		$mem_info[1]['megabyte_total']	= $this->fetched_sysctl['mem.swapmem_total'] / 1024 / 1024;
-		$mem_info[1]['megabyte_free'] 	= $this->fetched_sysctl['mem.swapmem_available'] / 1024 / 1024;
+		$mem_info[1]['megabyte_total']	= (float)($this->fetched_sysctl['mem.swapmem_total'] ?? 0) / 1024 / 1024;
+		$mem_info[1]['megabyte_free'] 	= (float)($this->fetched_sysctl['mem.swapmem_available'] ?? 0) / 1024 / 1024;
 		$mem_info[1]['megabyte_used'] 	= $mem_info[1]['megabyte_total'] - $mem_info[1]['megabyte_free'];
-		$mem_info[1]['percent_used']	= floor(($mem_info[1]['megabyte_used'] / $mem_info[1]['megabyte_total']) * 100);
+		$mem_info[1]['percent_used']	= ($mem_info[1]['megabyte_total'] > 0) ? floor(($mem_info[1]['megabyte_used'] / $mem_info[1]['megabyte_total']) * 100) : 0;
 		$mem_info[1]['percent_free'] 	= (100 - $mem_info[1]['percent_used']);
 
 		return $mem_info;
@@ -104,11 +104,12 @@ class WINNT extends System {
 			array_push($processes, $process);
 		}
 
+		$pids = array();
 		foreach ($processes as $key => $row) {
 		   $pids[$key]  = $row['PID'];
 		}
 
-		array_multisort($pids, SORT_ASC, $processes);
+		if (count($pids) > 0) array_multisort($pids, SORT_ASC, $processes);
 		return $processes;
 	}
 
@@ -137,9 +138,11 @@ class WINNT extends System {
 	 *************************************************************************/
 	function __fetch_perf__multi($params) {
 		$data = array();
+		$data_array = array();
 		exec($GLOBALS['path_to_ftpadmin_utils'] . 'perfmon.exe '. $params, $data_array);
 		foreach ($data_array as $line) {
 			$line = explode(';', $line, 3);
+			if (count($line) < 3) continue;
 			if (!isset($data[$line[0]][$line[1]])) $data[$line[0]][$line[1]] = array();
 			array_push($data[$line[0]][$line[1]], $line[2]);
 		}
@@ -148,9 +151,11 @@ class WINNT extends System {
 
 	function __fetch_perf__($params) {
 		$data = array();
+		$data_array = array();
 		exec($GLOBALS['path_to_ftpadmin_utils'] . 'perfmon.exe '. $params, $data_array);
 		foreach ($data_array as $line) {
 			$line = explode(';', $line, 3);
+			if (count($line) < 3) continue;
 			$data[$line[0]][$line[1]] = $line[2];
 		}
 		return $data;
@@ -159,12 +164,13 @@ class WINNT extends System {
 
 	function __fetch_sysctl__() {
 		if ($this->is_fetched_sysctl == 0) {
+			$data_array = array();
 			exec($GLOBALS['path_to_ftpadmin_utils'] . 'sysctl.exe', $data_array);
 
 			foreach ($data_array as $line) {
 				$line = explode(' = ', $line, 2);
 
-				$this->fetched_sysctl[trim($line[0])] = $line[1];
+				$this->fetched_sysctl[trim($line[0])] = $line[1] ?? '';
 			}
 			ksort($this->fetched_sysctl);
 			$this->is_fetched_sysctl = 1;

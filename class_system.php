@@ -2,13 +2,13 @@
 require_once('include_config.php');
 
 class System {
-	var $is_fetched_who 	= 0;
-	var $fetched_who 		= array();
+	public $is_fetched_who 	= 0;
+	public $fetched_who 		= array();
 
-	var $is_fetched_ftp 	= 0;
-	var $fetched_ftp 		= array();
-	var $is_fetched_ftp_mods= 0;
-	var $ftp_modules		= array();
+	public $is_fetched_ftp 	= 0;
+	public $fetched_ftp 		= array();
+	public $is_fetched_ftp_mods= 0;
+	public $ftp_modules		= array();
 
 
 	public function __construct() {
@@ -52,11 +52,12 @@ class System {
 
 	function get_ftpversion() {
 		$handle = popen($GLOBALS['config_path_to_proftpd'] . ' --version 2>&1', 'r');
-		$read = fread($handle, 2096);
+		if ($handle === false) return 'N.A.';
+		$read = (string)fread($handle, 2096);
 		pclose($handle);
 		$read = preg_split('/\s+/', $read, 5);
 
-		return $read[4];
+		return $read[4] ?? 'N.A.';
 	}
 
 	function get_ftpmodules() {
@@ -88,7 +89,7 @@ class System {
 
 		$user_data = array();
 		foreach($this->fetched_who as $user) {
-			$user = preg_split('/\s+/', $user, 3);
+			$user = array_pad(preg_split('/\s+/', $user, 3), 3, '');
 
 			array_push($user_data, array(	"username" 	=> $user[0],
 											"device"	=> $user[1],
@@ -113,7 +114,7 @@ class System {
 			$data = trim($this->fetched_ftp[$i]);
 			$data = preg_replace('/(\[\s+)/', '[', $data);
 			$data = preg_replace('/(\(\s+)/', '(', $data);
-			$data = preg_split('/(\s+)/', $data);
+			$data = array_pad(preg_split('/(\s+)/', $data), 6, '');
 
 			$user_data[$i - 1]["pid"] 		= $data[0];
 			$user_data[$i - 1]["username"]	= $data[1];
@@ -124,7 +125,7 @@ class System {
 			if ($data[4] == "idle") {
 				$user_data[$i - 1]["cmd"]		= 'IDLE';
 			} else {
-				if ($user_data[$i - 1]["idle"][0] == '(') $user_data[$i - 1]["idle"] = substr($user_data[$i - 1]["idle"], 1, -1);
+				if (substr($user_data[$i - 1]["idle"], 0, 1) == '(') $user_data[$i - 1]["idle"] = substr($user_data[$i - 1]["idle"], 1, -1);
 				$user_data[$i - 1]["cmd"]		= $data[4];
 				$user_data[$i - 1]["cmd_info"]	= $data[5];
 			}
@@ -138,10 +139,11 @@ class System {
 
 	function get_processlist() {
 		$processes = array();
+		$ps = array();
 		exec($GLOBALS['config_path_to_ps'] . ' -aexo user,pid,ppid,command', $ps);
 
 		for ($i = 1; $i < sizeof($ps); $i++) {
-			$chunks = preg_split('/\s+/', $ps[$i], 4);
+			$chunks = array_pad(preg_split('/\s+/', trim($ps[$i]), 4), 4, '');
 
 			$process = array();
 			$process['UID'] 	= $chunks[0];
@@ -171,8 +173,9 @@ class System {
 	 *
 	 *************************************************************************/
 	function __get_sysctl__($name) {
-		exec($GLOBALS['config_path_to_sysctl'] . ' -n ' . $name, $name);
-		return $name;
+		$output = array();
+		exec($GLOBALS['config_path_to_sysctl'] . ' -n ' . escapeshellarg($name), $output);
+		return $output;
 	}
 
 	function __fetch_who_data__() {
@@ -191,6 +194,7 @@ class System {
 
 	function __fetch_ftp_modules__() {
 		if ($this->is_fetched_ftp_mods == 0) {
+			$modules = array();
 			exec($GLOBALS['config_path_to_proftpd'] . ' -l', $modules);
 
 			for ($i = 1; $i < count($modules); $i++) {
@@ -206,6 +210,7 @@ class System {
 		$hour = $minute * 60;
 		$day = $hour * 24;
 
+		$time = (int)$time;
 		$ret  = (int)($time / $day) . " days, ";
 		$ret .= $this->__adapt_time__((int)(($time % $day) / $hour)) . ":";
 		$ret .= $this->__adapt_time__((int)(($time % $hour) / $minute)) . ":";

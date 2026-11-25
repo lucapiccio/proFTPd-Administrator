@@ -117,7 +117,7 @@ doFooter();
 
 function include_plain_text($title, $filename) {
 	$text = '';
-	$lines = @file($filename);
+	$lines = @file($filename) ?: array();
 
 	foreach($lines as $line) {
 		$line = wordwrap($line, 120);
@@ -129,7 +129,7 @@ function include_plain_text($title, $filename) {
 
 function include_configuration($title, $filename) {
 	$text = '';
-	$lines = @file($filename);
+	$lines = @file($filename) ?: array();
 
 	foreach($lines as $line) {
 		$line = wordwrap($line, 120);

@@ -4,7 +4,7 @@ doHeader();
 
 if (isset($_POST["frm_groupname"]) && strlen($_POST["frm_groupname"]) != 0) {
 	if (!$db->get_group_exists($_POST["frm_groupname"])) {
-		$db->do_add_group($_POST["frm_groupname"], @$_POST["frm_description"]);
+		$db->do_add_group($_POST["frm_groupname"], $_POST["frm_description"] ?? '');
 	}
 }
 ?>

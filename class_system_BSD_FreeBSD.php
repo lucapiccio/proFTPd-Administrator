@@ -3,8 +3,8 @@ require_once('class_system.php');
 require_once('class_system_BSD.php');
 
 class FreeBSD extends BSD {
-	var $is_fetched_uptime 	= 0;
-	var $fetched_uptime 	= array();
+	public $is_fetched_uptime 	= 0;
+	public $fetched_uptime 	= array();
 
 	public function __construct() {
 	}
@@ -15,7 +15,7 @@ class FreeBSD extends BSD {
 
 	function get_kernelversion() {
 		$version = $this->__get_sysctl__('kern.osrelease');
-		return $this->get_osclass() . ' ' .$version[0];
+		return $this->get_osclass() . ' ' . ($version[0] ?? '');
 	}
 
 	function get_uptime() {
@@ -34,7 +34,7 @@ class FreeBSD extends BSD {
 		$net_info = array();
 
 		foreach ($data as $device_info) {
-			$device_info = preg_split("/\s+/", $device_info);
+			$device_info = array_pad(preg_split("/\s+/", $device_info), 12, 0);
 
 			if (true || (!empty($device_info[0]) && !empty($device_info[3]))) {
 				$offset = 0;
@@ -44,9 +44,9 @@ class FreeBSD extends BSD {
 				$device['device_name'] = $device_info[0];
 				if (!empty($kernel_conf['device'][substr($device_info[0], 0, -1)])) $device['device_name'] .= ' - ' . trim(substr($kernel_conf['device'][substr($device_info[0], 0, -1)], 1));
 
-				$device['megabyte_recieved']	= ($device_info[5 + $offset] / 1024 / 1024);
-				$device['megabyte_sent'] 		= ($device_info[8 + $offset] / 1024 / 1024);
-				$device['error']				= ($device_info[4 + $offset] + $device_info[7 + $offset]);
+				$device['megabyte_recieved']	= ((float)$device_info[5 + $offset] / 1024 / 1024);
+				$device['megabyte_sent'] 		= ((float)$device_info[8 + $offset] / 1024 / 1024);
+				$device['error']				= ((int)$device_info[4 + $offset] + (int)$device_info[7 + $offset]);
 				$device['drop']					= $device_info[10 + $offset];
 
 				array_push($net_info, $device);
@@ -61,22 +61,22 @@ class FreeBSD extends BSD {
     function get_resource_memory() {
 		$pagesize = 1024;
     	$s = $this->__get_sysctl__('hw.physmem');
-		$s = $s[0];
+		$s = (float)($s[0] ?? 0);
 
-		$mem_info[0] = array("mountpoint" => "Physical");
+		$mem_info[0] = array("mountpoint" => "Physical", "megabyte_free" => 0);
 
 		exec('vmstat', $lines);
         for ($i = 0; $i < sizeof($lines); $i++) {
             $ar_buf = preg_split("/\s+/", $lines[$i], 19);
 
             if ($i == 2) {
-                $mem_info[0]['megabyte_free'] = ($ar_buf[5] * $pagesize / 1024) / 1024;
+                $mem_info[0]['megabyte_free'] = ((float)($ar_buf[5] ?? 0) * $pagesize / 1024) / 1024;
             }
         }
 
 		$mem_info[0]['megabyte_total']	= $s / 1024 / 1024;
 		$mem_info[0]['megabyte_used']	= $mem_info[0]['megabyte_total'] - $mem_info[0]['megabyte_free'];
-		$mem_info[0]['percent_used']	= (int)($mem_info[0]['megabyte_used'] * 100 / $mem_info[0]['megabyte_total']);
+		$mem_info[0]['percent_used']	= ($mem_info[0]['megabyte_total'] > 0) ? (int)($mem_info[0]['megabyte_used'] * 100 / $mem_info[0]['megabyte_total']) : 0;
 		$mem_info[0]['percent_free']	= (100 - $mem_info[0]['percent_used']);
 		unset($lines);
 
@@ -87,9 +87,9 @@ class FreeBSD extends BSD {
             if ($i != 0) {
             	$mem_info[$i] = array("mountpoint" => 'Swap');
 
-				$mem_info[$i]['megabyte_total']	= $ar_buf[1] / 1024;
-				$mem_info[$i]['megabyte_used']	= $ar_buf[2] / 1024;
-                $mem_info[$i]['megabyte_free'] 	= $mem_info[1]['megabyte_total'] - $mem_info[1]['megabyte_used'];
+				$mem_info[$i]['megabyte_total']	= (float)($ar_buf[1] ?? 0) / 1024;
+				$mem_info[$i]['megabyte_used']	= (float)($ar_buf[2] ?? 0) / 1024;
+                $mem_info[$i]['megabyte_free'] 	= $mem_info[$i]['megabyte_total'] - $mem_info[$i]['megabyte_used'];
 
                 if ($mem_info[$i]['megabyte_used'] == 0) $mem_info[$i]['percent_used'] = 0;
 				else $mem_info[$i]['percent_used'] = (int)($mem_info[$i]['megabyte_used'] * 100 / $mem_info[$i]['megabyte_total']);
@@ -108,10 +108,10 @@ class FreeBSD extends BSD {
 	 *************************************************************************/
 	function __get_system_ticks__() {
 		$sys_ticks = $this->__get_sysctl__('kern.boottime');
-		$sys_ticks = $sys_ticks[0];
+		$sys_ticks = $sys_ticks[0] ?? '';
 
         $sys_ticks = explode(' ', $sys_ticks);
-        $sys_ticks = $sys_ticks[3];
+        $sys_ticks = (int)($sys_ticks[3] ?? 0);
         $sys_ticks = time() - $sys_ticks;
 
         return $sys_ticks;

@@ -17,7 +17,7 @@ function load_configuration() {
 	$configuration = array();
 
 	$xml = simplexml_load_file('configuration.xml');
-	$xml = recursive_obj2array($xml, $configuration);
+	if ($xml !== false) recursive_obj2array($xml, $configuration);
 
 	$osname = 'generic';
 	switch (PHP_OS) {
@@ -28,8 +28,8 @@ function load_configuration() {
 	}
 
 	$configuration['file_paths']['generic']
-		= array_merge(	$configuration['file_paths']['generic'],
-						$configuration['file_paths']['os_specific'][$osname]);
+		= array_merge(	(array)($configuration['file_paths']['generic'] ?? array()),
+						(array)($configuration['file_paths']['os_specific'][$osname] ?? array()));
 
 	return $configuration;
 }

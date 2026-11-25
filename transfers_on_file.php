@@ -34,7 +34,7 @@
 	</tr>
 </table>
 <?php
-function make_file_listing($path = './', $category) {
+function make_file_listing($path, $category) {
 	if (!file_exists($path) || !is_dir($path)) {
 			echo '<tr><td colspan="4" class="box-sel" align="center"><span class="error">' . $GLOBALS['language']['transfers']['err_no_open'] . $path . '.</span></td></tr>';
 	} else {

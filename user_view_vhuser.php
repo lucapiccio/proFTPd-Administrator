@@ -77,9 +77,9 @@ $vhuser_data = $db->get_vhuser_by_id($res_data['uid']);
 		</td>
 	</tr>
 	<?php if (isset($exists) && $exists == 1) {
-	        pdns_recnotify($language['configure']['pdns_domain_exists_true'], black);
+	        pdns_recnotify($language['configure']['pdns_domain_exists_true'], 'black');
 	  } else if (isset($exists) && $exists == 0) {
-	        pdns_recnotify($language['configure']['pdns_domain_exists_false'], red);
+	        pdns_recnotify($language['configure']['pdns_domain_exists_false'], 'red');
 	  }
 	}
 	?>

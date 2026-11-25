@@ -5,19 +5,20 @@ doHeader();
 $cmd_output = '';
 if (isset($_POST["frm_username"]) && strlen($_POST["frm_username"]) != 0 && isset($_POST["frm_homedir"]) && strlen($_POST["frm_homedir"]) != 0 && isset($_POST["frm_password"]) && strlen($_POST["frm_password"]) != 0 ) {
 	if (!$db->get_user_exists($_POST["frm_username"])) {
-		$db->do_add_user($_POST["frm_username"], $_POST["frm_password"], $_POST["frm_homedir"], $_POST["frm_shell"], $_POST["frm_main_group"], $_POST["frm_expiration"], $_POST["frm_disabled"], @$_POST["frm_name"], @$_POST["frm_mail"], @$_POST["frm_adress"], @$_POST["frm_notes"]);
+		$db->do_add_user($_POST["frm_username"], $_POST["frm_password"], $_POST["frm_homedir"], $_POST["frm_shell"] ?? '', $_POST["frm_main_group"] ?? '', $_POST["frm_expiration"] ?? '', $_POST["frm_disabled"] ?? 0, $_POST["frm_name"] ?? '', $_POST["frm_mail"] ?? '', $_POST["frm_adress"] ?? '', $_POST["frm_notes"] ?? '');
 		if ($config_ext['vhosts']['enabled'] == 1) {
 			$uid = $db->get_UIDbyUSERNAME($_POST["frm_username"]);
-			$db->do_add_vhuser($_POST["frm_username"], $_POST["frm_homedir"], $uid);
+			$db->do_add_vhuser($_POST["frm_username"], $_POST["frm_homedir"], $uid, 0, '', '', '', '');
 		}
 
-		if ($config_ext['quota']['enabled'] == 1 && $_POST['frm_add_quota'] == 1) {
+		if ($config_ext['quota']['enabled'] == 1 && ($_POST['frm_add_quota'] ?? 0) == 1) {
 			$db->do_add_default_quota($_POST["frm_username"]);
 		}
 
 		if ($config_createuser_command != '') {
-			$params = '"' . $_POST["frm_username"] . '" "' . $db->get_last_added_userid() . '" "' . $_POST["frm_main_group"] . '" "' . $_POST["frm_homedir"] . '" "' . $_POST["frm_mail"] . '"';
-			$cmd_output = shell_exec($config_createuser_command . ' ' . $params . ' 2>&1');
+			/* escapeshellarg(): user input must never reach the shell unescaped. */
+			$params = escapeshellarg($_POST["frm_username"]) . ' ' . escapeshellarg((string)$db->get_last_added_userid()) . ' ' . escapeshellarg($_POST["frm_main_group"] ?? '') . ' ' . escapeshellarg($_POST["frm_homedir"]) . ' ' . escapeshellarg($_POST["frm_mail"] ?? '');
+			$cmd_output = (string)shell_exec($config_createuser_command . ' ' . $params . ' 2>&1');
 		}
 	}
 }
@@ -40,9 +41,9 @@ $group_data = $db->get_group_data();
 				<td width="*"  class="box-pl" align="center"><?php echo $GLOBALS['language']['general']['numlogins']; ?></td>
 				<td width="120" class="box-pl" align="center"><?php echo $GLOBALS['language']['general']['lastlogin']; ?></td>
 				<td width="120" class="box-pl" align="center"><?php echo $GLOBALS['language']['general']['expiration']; ?></td>
-				<? if ($config_ext['quota']['enabled'] == 1){ ?>
+				<?php if ($config_ext['quota']['enabled'] == 1){ ?>
 				<td width="*"   class="box-pl" align="center"><?php echo $GLOBALS['language']['configure']['menu_quota']; ?></td>
-				<? } ?>
+				<?php } ?>
 				<td width="*"  class="box-pl" align="center"><?php echo $GLOBALS['language']['general']['disabled']; ?></td>
 			</tr>
 			<?php
@@ -57,11 +58,11 @@ $group_data = $db->get_group_data();
 					echo '<td width="*" class="box-sel" align="left"><a href="user_view.php?viewID=' . $user_data['uid'] . '">' . $user_data['userid'] . '</a></td>';
 					echo '<td width="*"  class="box-sel" align="left">';
 
-					if (strlen($user_data["groupname"]) != 0) echo '<a href="group_view.php?viewID=' . $user_data['gid'] . '">';
+					if (strlen((string)$user_data["groupname"]) != 0) echo '<a href="group_view.php?viewID=' . $user_data['gid'] . '">';
 					else echo '<a href="user_view.php?viewID=' . $user_data["uid"] . '&section=groups">';
 					echo '<span class="primarygroup">';
 
-					if (strlen($user_data["groupname"]) != 0) echo $user_data["groupname"];
+					if (strlen((string)$user_data["groupname"]) != 0) echo $user_data["groupname"];
 					else echo '<span class="error">' . $GLOBALS['language']['users']['no_group'] . '</span>';
 					echo '</span></a>';
 
@@ -102,6 +103,7 @@ $group_data = $db->get_group_data();
 		</tr>
 	</table>
 <?php
+$user_menu = array();
 $user_menu[$GLOBALS['language']['users']['newuser']]	= $_SERVER['PHP_SELF'] . '?section=adduser';
 doMenu($user_menu);
 

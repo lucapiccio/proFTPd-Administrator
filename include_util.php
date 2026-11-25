@@ -7,6 +7,7 @@ function tickToTime($time) {
 	$hour = $minute * 60;
 	$day = $hour * 24;
 
+	$time = (int)$time;
 	$ret  = (int)($time / $day) . " days, ";
 	$ret .= adaptTime((int)(($time % $day) / $hour)) . ":";
 	$ret .= adaptTime((int)(($time % $hour) / $minute)) . ":";
@@ -25,11 +26,11 @@ function adaptTime($time) {
 }
 
 function formatSize($data) {
-	return number_format($data / (1024 * 1024), 2, ',', ' ') . ' MB';
+	return number_format((float)$data / (1024 * 1024), 2, ',', ' ') . ' MB';
 }
 
 function float2int($flt) {
-	$int = ($flt / (1024 * 1024)) + 0.1;
+	$int = ((float)$flt / (1024 * 1024)) + 0.1;
 	settype($int, "integer");
 	return $int;
 }
@@ -37,14 +38,14 @@ function float2int($flt) {
 function mb2byte($megabytes) {
 	if ($megabytes == 0) return 0;
 
-	$mb = $megabytes * (1024 * 1024);
+	$mb = (float)$megabytes * (1024 * 1024);
 	return $mb;
 }
 
 function byte2mb($bytes) {
 	if ($bytes == 0) return 0;
 
-	$bts = $bytes / (1024 * 1024);
+	$bts = (float)$bytes / (1024 * 1024);
 	return number_format($bts, 2, '.', '');
 }
 
@@ -106,15 +107,16 @@ function make_traffic_time($label, $userid) {
 function make_traffic_time_row($data) {
 	echo '<tr onmouseover="if (typeof(this.style) != \'undefined\') this.className = \'overRow\';" onmouseout="if (typeof(this.style) != \'undefined\') this.className = \'\'">';
 	echo '	<td width="100"  class="box-sel">' . $data['label'] . '</td>';
-	echo '	<td width="*"  class="box-sel" align="right">' . formatSize(@$data["RETR"]["bytes"]) . '</td>';
-	echo '	<td width="60"  class="box-sel" align="right">' . number_format((@$data["RETR"]["files"]), 0, " ", " ") . '</td>';
-	echo '	<td width="*"  class="box-sel" align="right">' . formatSize(@$data["STOR"]["bytes"]) . '</td>';
-	echo '	<td width="60"  class="box-sel" align="right">' . number_format((@$data["STOR"]["files"]), 0, " ", " ") . '</td>';
+	echo '	<td width="*"  class="box-sel" align="right">' . formatSize($data["RETR"]["bytes"] ?? 0) . '</td>';
+	echo '	<td width="60"  class="box-sel" align="right">' . number_format((float)($data["RETR"]["files"] ?? 0), 0, " ", " ") . '</td>';
+	echo '	<td width="*"  class="box-sel" align="right">' . formatSize($data["STOR"]["bytes"] ?? 0) . '</td>';
+	echo '	<td width="60"  class="box-sel" align="right">' . number_format((float)($data["STOR"]["files"] ?? 0), 0, " ", " ") . '</td>';
 	echo '</tr>';
 }
 
 function make_traffic_section($label, $username, $command) {
 	global $config_ftp_root, $config_ftp_sections_down, $config_ftp_sections_up, $db;
+	$config_ftp_sections = array();
 	if ($command == "RETR") $config_ftp_sections = $config_ftp_sections_down;
 	if ($command == "STOR") $config_ftp_sections = $config_ftp_sections_up;
 
@@ -144,7 +146,7 @@ function make_traffic_section($label, $username, $command) {
 					$mostActiveUID 	= -1;
 					$mostActive 	= '';
 					$highestSize 	= 0;
-					$result			= array();
+					$result			= array('file_size' => 0, 'num_files' => 0);
 
 					foreach($section_stats as $stat) {
 						if ($stat['file_size'] > $highestSize) {
@@ -161,8 +163,8 @@ function make_traffic_section($label, $username, $command) {
 					echo '<tr onmouseover="if (typeof(this.style) != \'undefined\') this.className = \'overRow\';" onmouseout="if (typeof(this.style) != \'undefined\') this.className = \'\'">';
 					echo '	<td width="*"  class="box-sel" align="left">' . $section . '</td>';
 					if ($username == "total")  echo '<td width="100"  class="box-sel" align="left">' . $mostActive . '</td>';
-					echo '	<td width="150"  class="box-sel" align="right">' . formatSize(@$result["file_size"]) . '</td>';
-					echo '	<td width="100"  class="box-sel" align="right">' . number_format((@$result["num_files"]), 0, " ", " ") . '</td>';
+					echo '	<td width="150"  class="box-sel" align="right">' . formatSize($result["file_size"]) . '</td>';
+					echo '	<td width="100"  class="box-sel" align="right">' . number_format((float)$result["num_files"], 0, " ", " ") . '</td>';
 					echo '</tr>';
 				}
 				?>
@@ -200,8 +202,8 @@ function make_toplist_bycommand($label, $command) {
 
 						if (!isset($stat["uid"])) echo '<td width="100"   class="box-sel" align="left">' . @$stat["userid"] . '</td>';
 						else echo '<td width="100"   class="box-sel" align="left"><a href="user_view.php?viewID=' . @$stat["uid"] . '">' . @$stat["userid"] . '</a></td>';
-						echo '<td width="*"  class="box-sel" align="right">' . formatSize(@$stat["bytes"]) . '</td>';
-						echo '<td width="100"  class="box-sel" align="right">' . number_format(@$stat["files"], 0, " ", " ") . '</td>';
+						echo '<td width="*"  class="box-sel" align="right">' . formatSize($stat["bytes"] ?? 0) . '</td>';
+						echo '<td width="100"  class="box-sel" align="right">' . number_format((float)($stat["files"] ?? 0), 0, " ", " ") . '</td>';
 						echo '<td width="120"  class="box-sel" align="center">' . @$stat["lastlogin"] . '</td>';
 						echo '</tr>';
 
@@ -285,18 +287,19 @@ function make_logviewer($logskip, $page_link, $username = "total") {
 
 function makeNavBar($num_rows, $username, $page_link) {
 	global $config_userview_logitems, $config_style_name;
+	$logskip = (int)($_GET["logskip"] ?? 0);
 	$span = 5;
 	if ($username == "total") $span = 6;
 
 	echo '<tr>';
 	echo '<td width="*"  class="box-sel" align="right" colspan="' . $span . '">';
 
-	if (isset($_GET["logskip"]) && $_GET["logskip"] !=0) echo '<a href="' . $page_link . 'logskip=' . ($_GET["logskip"] - $config_userview_logitems) . '"><img src="style/' . $config_style_name . '/left.gif" style="border: none; margin-right: 0px;" alt=""></a>';
+	if ($logskip != 0) echo '<a href="' . $page_link . 'logskip=' . ($logskip - $config_userview_logitems) . '"><img src="style/' . $config_style_name . '/left.gif" style="border: none; margin-right: 0px;" alt=""></a>';
 	else echo '<img src="style/' . $config_style_name . '/nleft.gif" style="border: none;" alt="">';
 
 	echo '<a href="' . $page_link . 'logskip=0' . '"><img src="style/' . $config_style_name . '/center.gif" style="border: none;" alt=""></a>';
 
-	if ($num_rows == $config_userview_logitems) echo '<a href="' . $page_link . 'logskip=' . ($_GET["logskip"] + $config_userview_logitems) . '"><img src="style/' . $config_style_name . '/right.gif" style="border: none; margin-left: 0px;" alt=""></a>';
+	if ($num_rows == $config_userview_logitems) echo '<a href="' . $page_link . 'logskip=' . ($logskip + $config_userview_logitems) . '"><img src="style/' . $config_style_name . '/right.gif" style="border: none; margin-left: 0px;" alt=""></a>';
 	else echo '<img src="style/' . $config_style_name . '/nright.gif" style="border: none;" alt="">';
 
 	echo '</td>';
@@ -304,11 +307,12 @@ function makeNavBar($num_rows, $username, $page_link) {
 }
 
 function format_filename ($filename) {
-	$result = wordwrap($filename, 80, "<br>", 1);
+	$result = wordwrap((string)$filename, 80, "<br>", true);
 	return $result;
 }
 function fix_home ($path){
-	$npath = split('[/]', $path);
-	echo "/".$npath[count($npath)-2]."/".$npath[count($npath)-1];
+	$npath = explode('/', (string)$path);
+	$count = count($npath);
+	echo "/" . ($npath[$count - 2] ?? '') . "/" . $npath[$count - 1];
 }
 ?>

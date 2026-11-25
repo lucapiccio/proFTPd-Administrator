@@ -48,7 +48,7 @@ if (isset($_GET["section"]) and $_GET["section"] == "section") {
 
 if (isset($_GET["section"]) and $_GET["section"] == "logs") {
 	$logskip = 0;
-	if (isset($_GET["logskip"]) && $_GET["logskip"] !=0) $logskip = $_GET["logskip"];
+	if (isset($_GET["logskip"]) && $_GET["logskip"] !=0) $logskip = max(0, (int)$_GET["logskip"]);
 
 	make_logviewer($logskip, $_SERVER['PHP_SELF'] . '?section=logs&amp;');
 }
@@ -94,6 +94,7 @@ function verify($category, $file) {
 
 function viewLog($filename, $full_log = false) {
 	$content = @file($filename);
+	if ($content === false) $content = array();
 	$size = count($content);
 
 	$content = array_reverse($content);
@@ -121,6 +122,7 @@ function viewLog($filename, $full_log = false) {
 		</tr>
 	</table>
 	<?php
+	$back_menu = array();
 	$back_menu[$GLOBALS['language']['transfers']['full_log_bt']] = $_SERVER['PHP_SELF'] . '?section=on_file&amp;category=' . $_GET['category'] . '&amp;file=' . $_GET['file'] . '&amp;full_log=1';
 	$back_menu[$GLOBALS['language']['menu']['log_files']]   = $_SERVER['PHP_SELF'] . '?section=on_file';
 	doMenu($back_menu);

@@ -46,7 +46,7 @@ doHeader();
 				<td class="box-sel"><?php echo $system -> get_kernelversion(); ?></td>
 				<td width="100">&nbsp;</td>
 				<td class="box-sel-head"><?php echo $GLOBALS['language']['status']['db_server']; ?>:</td>
-				<td class="box-sel"><?php echo mysql_get_server_info(); ?></td>
+				<td class="box-sel"><?php echo $db->get_server_info(); ?></td>
 			</tr>
 			<tr>
 				<td class="box-sel-head"><?php echo $GLOBALS['language']['status']['uptime']; ?>:</td>
