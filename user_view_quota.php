@@ -33,14 +33,14 @@ if ($quota_data['have_quota'] == false) {
 						<td width="*" class="box-sel" align="left">
 							<table width="100%">
 								<td width="50%" align="center"><input class="radio" type="radio" name="frm_quota_turndefaultlimit" value="soft" <?php if ($quota_data['total']['limit_type'] == "soft"){ ?> checked <?php }?>> soft</td>
-								<td width="50%" align="center"><input class="radio" type="radio" name="frm_quota_turndefaultlimit" value="hard" <? if ($quota_data['total']['limit_type'] == "hard"){?> checked <?}?>> hard</td>
+								<td width="50%" align="center"><input class="radio" type="radio" name="frm_quota_turndefaultlimit" value="hard" <?php if ($quota_data['total']['limit_type'] == "hard"){?> checked <?php }?>> hard</td>
 							</table>
 						</td>
 						<td width="*" class="box-sel-head"><?php echo $GLOBALS['language']['configure']['quota_whatsession']; ?>:</td>
 						<td width="*" class="box-sel" align="left">
 							<table width="100%">
-								<td width="50%" align="center"><input class="radio" type="radio" name="frm_quota_turndefaultpersession" value="true" <? if ($quota_data['total']['per_session'] == "true"){?> checked <?}?>> <?php echo $GLOBALS['language']['general']['yes']; ?></td>
-								<td width="50%" align="center"><input class="radio" type="radio" name="frm_quota_turndefaultpersession" value="false" <? if ($quota_data['total']['per_session'] == "false"){?> checked <?}?>> <?php echo $GLOBALS['language']['general']['no']; ?></td>
+								<td width="50%" align="center"><input class="radio" type="radio" name="frm_quota_turndefaultpersession" value="true" <?php if ($quota_data['total']['per_session'] == "true"){?> checked <?php }?>> <?php echo $GLOBALS['language']['general']['yes']; ?></td>
+								<td width="50%" align="center"><input class="radio" type="radio" name="frm_quota_turndefaultpersession" value="false" <?php if ($quota_data['total']['per_session'] == "false"){?> checked <?php }?>> <?php echo $GLOBALS['language']['general']['no']; ?></td>
 							</table>
 						</td>
 					</tr>

@@ -28,8 +28,8 @@
 		case 'NetBSD':
 		case 'FreeBSD':
 			if (isset($_POST['frm_config_path_kernel']) || isset($_POST['frm_config_path_proftpd'])) {
-				$configuration['file_paths']['os_specific'][$osname]['kernel_configuration'] = $_POST['frm_config_path_kernel'];
-				$configuration['file_paths']['os_specific'][$osname]['proftpd'] = $_POST['frm_config_path_proftpd'];
+				$configuration['file_paths']['os_specific'][$osname]['kernel_configuration'] = $_POST['frm_config_path_kernel'] ?? '';
+				$configuration['file_paths']['os_specific'][$osname]['proftpd'] = $_POST['frm_config_path_proftpd'] ?? '';
 
 				$writeconfig = true;
 			}

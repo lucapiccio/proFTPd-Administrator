@@ -11,7 +11,7 @@
 					<td width="*" class="box-sel-head"><?php echo $GLOBALS['language']['configure']['quota_activate']; ?>:</td>
 					<td width="*" class="box-sel" align="left">
 						<table width="100%">
-							<td width="30%"><input class="radio" type="radio" name="frm_quota_turn" value="1" <? if ($config_ext['quota']['enabled'] == 1){?> checked <?}?>> <?php echo $GLOBALS['language']['general']['yes']; ?></td>
+							<td width="30%"><input class="radio" type="radio" name="frm_quota_turn" value="1" <?php if ($config_ext['quota']['enabled'] == 1){?> checked <?php }?>> <?php echo $GLOBALS['language']['general']['yes']; ?></td>
 							<td width="70%"><input class="radio" type="radio" name="frm_quota_turn" value="0" <?php if ($config_ext['quota']['enabled'] == 0){?> checked <?php } ?>> <?php echo $GLOBALS['language']['general']['no']; ?></td>
 						</table>
 					</td>
@@ -33,14 +33,14 @@
 					<td width="*" class="box-sel" align="left">
 						<table width="100%">
 							<td width="30%"><input class="radio" type="radio" name="frm_quota_turndefaultlimit" value="soft" <?php if ($config_ext['quota']['limittype'] == 'soft'){ ?> checked <?php }?>> soft</td>
-							<td width="70%"><input class="radio" type="radio" name="frm_quota_turndefaultlimit" value="hard" <? if ($config_ext['quota']['limittype'] == 'hard'){?> checked <?}?>> hard</td>
+							<td width="70%"><input class="radio" type="radio" name="frm_quota_turndefaultlimit" value="hard" <?php if ($config_ext['quota']['limittype'] == 'hard'){?> checked <?php }?>> hard</td>
 						</table>
 					</td>
 					<td width="*" class="box-sel-head"><?php echo $GLOBALS['language']['configure']['quota_whatsession']; ?>:</td>
 					<td width="*" class="box-sel" align="left">
 						<table width="100%">
-							<td width="30%"><input class="radio" type="radio" name="frm_quota_turndefaultpersession" value="1" <? if ($config_ext['quota']['per_session'] == 1){?> checked <?}?>> <?php echo $GLOBALS['language']['general']['yes']; ?></td>
-							<td width="70%"><input class="radio" type="radio" name="frm_quota_turndefaultpersession" value="0" <? if ($config_ext['quota']['per_session'] == 0){?> checked <?}?>> <?php echo $GLOBALS['language']['general']['no']; ?></td>
+							<td width="30%"><input class="radio" type="radio" name="frm_quota_turndefaultpersession" value="1" <?php if ($config_ext['quota']['per_session'] == 1){?> checked <?php }?>> <?php echo $GLOBALS['language']['general']['yes']; ?></td>
+							<td width="70%"><input class="radio" type="radio" name="frm_quota_turndefaultpersession" value="0" <?php if ($config_ext['quota']['per_session'] == 0){?> checked <?php }?>> <?php echo $GLOBALS['language']['general']['no']; ?></td>
 						</table>
 					</td>
 				</tr>

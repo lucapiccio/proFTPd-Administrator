@@ -83,7 +83,7 @@ function doError($type, $message) {
 	<?php
 }
 
-function doErrorList($title = 'Error', $errorlist) {
+function doErrorList($title, $errorlist) {
 	?>
 		<br><br>
 		<table class="box">

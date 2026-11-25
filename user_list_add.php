@@ -83,14 +83,14 @@
 					<td width="130" class="box-sel-head"><?php echo $GLOBALS['language']['general']['expiration']; ?>:</td>
 					<td width="220" class="box-sel" align="right">
 						<select name="frm_expiration_select" style="width: 238px;" onChange="reCalc();">
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("-1 day"))) ?>"><?php echo $GLOBALS['language']['general']['time_yesterday']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("+1 day"))) ?>"><?php echo $GLOBALS['language']['general']['time_24h']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("+1 week"))) ?>"><?php echo $GLOBALS['language']['general']['time_1week']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("+2 weeks"))) ?>"><?php echo $GLOBALS['language']['general']['time_2week']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("+1 month"))) ?>"><?php echo $GLOBALS['language']['general']['time_1month']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("+3 months"))) ?>"><?php echo $GLOBALS['language']['general']['time_3month']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("+6 months"))) ?>"><?php echo $GLOBALS['language']['general']['time_6month']; ?>
-						  <option value="<?php print(strftime("%Y-%m-%d %H:%M:%S",strtotime("+1 year"))) ?>"><?php echo $GLOBALS['language']['general']['time_1year']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("-1 day"))) ?>"><?php echo $GLOBALS['language']['general']['time_yesterday']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("+1 day"))) ?>"><?php echo $GLOBALS['language']['general']['time_24h']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("+1 week"))) ?>"><?php echo $GLOBALS['language']['general']['time_1week']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("+2 weeks"))) ?>"><?php echo $GLOBALS['language']['general']['time_2week']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("+1 month"))) ?>"><?php echo $GLOBALS['language']['general']['time_1month']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("+3 months"))) ?>"><?php echo $GLOBALS['language']['general']['time_3month']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("+6 months"))) ?>"><?php echo $GLOBALS['language']['general']['time_6month']; ?>
+						  <option value="<?php print(date('Y-m-d H:i:s', strtotime("+1 year"))) ?>"><?php echo $GLOBALS['language']['general']['time_1year']; ?>
 						  <option value="0000-00-00 00:00:00" selected><?php echo $GLOBALS['language']['general']['time_never']; ?>
 						</select>
 					</td>

@@ -7,8 +7,6 @@ class MySQL extends Database {
 	//function MySQL() {
 	public function __construct() {
 		/* Run constructor for parent class to make sure variables are set. */
-		//$this->Database();
-		new Database();
 		parent::__construct();
 
 		$this->log_add_debug('Initialization', 'Class: MySQL');
@@ -18,11 +16,18 @@ class MySQL extends Database {
 	function do_connect() {
 		$this->log_add_debug('do_connect','Connecting to database with credentials ' .
 							  $this->db_username . '@' . $this->db_host);
-		$this->connection_handle = @mysqli_connect( $this->db_host, $this->db_username, $this->db_password);
+		/* Since PHP 8.1 mysqli throws exceptions by default; this class relies on
+		 * return values and mysqli_error(), so restore the legacy behaviour. */
+		mysqli_report(MYSQLI_REPORT_OFF);
+		$handle = @mysqli_connect($this->db_host, $this->db_username, $this->db_password);
 
-		if (!$this->connection_handle) {
+		if (!$handle) {
+			$this->connection_handle = null;
 			$this->log_additem('do_connect', 'Connecting to database failed with errors: ' . mysqli_connect_error());
-		} else $this->connected = true;
+		} else {
+			$this->connection_handle = $handle;
+			$this->connected = true;
+		}
 	}
 
 	function do_select_db() {
@@ -60,14 +65,14 @@ class MySQL extends Database {
 			$this->log_add_debug('get_USERNAMEbyUID', 'Get username for the uid "' . $uid. '"... username is ' . $list[$uid] . ' (cached)');
 			return $list[$uid];
 		} else {
-			$sql = mysqli_query($this->connection_handle, 'SELECT userid FROM usertable WHERE uid="' . $uid . '";');
+			$sql = $this->__query('SELECT userid FROM usertable WHERE uid="' . $uid . '";');
 
-			if (mysqli_num_rows($sql) == 0) {
+			if ($this->__num_rows($sql) == 0) {
 				$this->log_add_debug('get_USERNAMEbyUID', 'Get username for the uid "' . $uid . '"... none found');
 				return null;
 			}
 			else {
-				$data = mysqli_fetch_array($sql);
+				$data = $this->__fetch($sql);
 				$this->log_add_debug('get_USERNAMEbyUID', 'Get username for the uid "' . $uid . '"... username is "' . $data["userid"] . '"');
 				$this->get_UID_cache[$data["userid"]] = $uid;
 				return $data["userid"];
@@ -81,15 +86,15 @@ class MySQL extends Database {
 			return $this->get_UID_cache[$username];
 		}
 
-		$sql = mysqli_query($this->connection_handle, 'SELECT uid FROM usertable WHERE userid="' . $username . '";');
+		$sql = $this->__query('SELECT uid FROM usertable WHERE userid="' . $username . '";');
 
-		if (mysqli_num_rows($sql) == 0) {
+		if ($this->__num_rows($sql) == 0) {
 			$this->log_add_debug('getUIDbyUSERNAME', 'Get UID for the username "' . $username . '"... none found');
 			$this->get_UID_cache[$username] = -1;
 			return -1;
 		}
 		else {
-			$data = mysqli_fetch_array($sql);
+			$data = $this->__fetch($sql);
 			$this->log_add_debug('getUIDbyUSERNAME', 'Get UID for the username "' . $username . '"... UID is ' . $data["uid"]);
 			$this->get_UID_cache[$username] = $data["uid"];
 			return $data["uid"];
@@ -97,42 +102,42 @@ class MySQL extends Database {
 	}
 
 	function get_GIDbyGROUPNAME($groupname) {
-		$sql = mysqli_query($this->connection_handle, 'SELECT gid FROM grouptable WHERE groupname="' . $groupname . '";');
+		$sql = $this->__query('SELECT gid FROM grouptable WHERE groupname="' . $groupname . '";');
 
-		if (mysqli_num_rows($sql) == 0) {
+		if ($this->__num_rows($sql) == 0) {
 			$this->log_add_debug('get_GIDbyGROUPNAME', 'Get GID for the groupname "' . $groupname . '"... none found');
 			return -1;
 		}
 		else {
-			$data = mysqli_fetch_array($sql);
+			$data = $this->__fetch($sql);
 			$this->log_add_debug('get_GIDbyGROUPNAME', 'Get GID for the groupname "' . $groupname . '"... GID is ' . $data["gid"]);
 			return $data["gid"];
 		}
 	}
 
 	function get_UID_exists($userid) {
-		$sql = mysqli_query($this->connection_handle, 'SELECT NULL FROM usertable WHERE uid="' . $userid . '";');
+		$sql = $this->__query('SELECT NULL FROM usertable WHERE uid="' . $userid . '";');
 
-		if (mysqli_num_rows($sql) == 0) {
+		if ($this->__num_rows($sql) == 0) {
 			$this->log_add_debug('get_UID_exists', 'Checking for existing UID, "' . $userid . '"... none found');
 			return false;
 		}
 		else {
-			$data = mysqli_fetch_array($sql);
+			$data = $this->__fetch($sql);
 			$this->log_add_debug('get_UID_exists', 'Checking for existing UID, "' . $userid . '"... UID exists');
 			return true;
 		}
 	}
 
 	function get_GID_exists($groupid) {
-		$sql = mysqli_query($this->connection_handle, 'SELECT NULL FROM grouptable WHERE gid="' . $groupid . '";');
+		$sql = $this->__query('SELECT NULL FROM grouptable WHERE gid="' . $groupid . '";');
 
-		if (mysqli_num_rows($sql) == 0) {
+		if ($this->__num_rows($sql) == 0) {
 			$this->log_add_debug('get_GID_exists', 'Checking for existing GID, "' . $groupid . '"... none found');
 			return false;
 		}
 		else {
-			$data = mysqli_fetch_array($sql);
+			$data = $this->__fetch($sql);
 			$this->log_add_debug('get_GID_exists', 'Checking for existing GID, "' . $groupid . '"... GID exists');
 			return true;
 		}
@@ -150,7 +155,7 @@ class MySQL extends Database {
 
 		$groups = $this->__get_array_from_query('SELECT groupname, members FROM grouptable');
 		foreach ($groups as $group) {
-			$users = explode(',', $group['members']);
+			$users = explode(',', (string)$group['members']);
 
 			foreach ($users as $user) {
 				$user = trim($user);
@@ -174,7 +179,7 @@ class MySQL extends Database {
 							  $expiration . '", disabled="' . $disabled . '", det_name="' . @$name .
 							  '", det_mail="' . @$mail . '", det_adress="' . @$address .
 							  '", det_notes="' . @$notes . '"');
-		$this->last_added_userid = mysqli_insert_id($this->connection_handle);
+		$this->last_added_userid = $this->is_ready() ? mysqli_insert_id($this->connection_handle) : -1;
 	}
 	/* Quotalimit **************************************************************/
 	function do_add_quota($username, $quotatype, $quota_persession, $quota_limittype, $upload_byteondisk, $download_bytefromdisk, $transfer_byteinout, $upload_fileondisk, $download_filefromdisk, $transfer_fileinout) {
@@ -193,9 +198,9 @@ class MySQL extends Database {
 		$members = array();
 		$groupnames = array();
 
-		$res = mysqli_query($this->connection_handle, 'SELECT * FROM grouptable');
+		$res = $this->__query('SELECT * FROM grouptable');
 
-		while($row = mysqli_fetch_array($res)) {
+		while($row = $this->__fetch($res)) {
 			$groupnames[$row["gid"]] = $row["groupname"];
 
 			if (isset($row["members"]) && strlen($row["members"]) != 0) {
@@ -216,15 +221,15 @@ class MySQL extends Database {
 
 	function get_userlist() {
 		$this->log_add_debug('get_userlist', 'Fetching data for users');
-		return $this->__get_array_from_query('SELECT usertable.*, grouptable.groupname FROM usertable LEFT JOIN grouptable ON usertable.gid=grouptable.gid ORDER BY userid', $this->connection_handle);
+		return $this->__get_array_from_query('SELECT usertable.*, grouptable.groupname FROM usertable LEFT JOIN grouptable ON usertable.gid=grouptable.gid ORDER BY userid');
 	}
 
 	function get_userlist_quota() {
 		$this->log_add_debug('get_userlist_quota', 'Fetching data and quota for users');
 		$result = array();
 
-		$user_list = $this->__get_array_from_query('SELECT usertable.*, grouptable.groupname FROM usertable LEFT JOIN grouptable ON usertable.gid=grouptable.gid ORDER BY userid', $this->connection_handle);
-		$quota_list= $this->__get_array_from_query('SELECT name FROM ftpquotalimits', $this->connection_handle);
+		$user_list = $this->__get_array_from_query('SELECT usertable.*, grouptable.groupname FROM usertable LEFT JOIN grouptable ON usertable.gid=grouptable.gid ORDER BY userid');
+		$quota_list= $this->__get_array_from_query('SELECT name FROM ftpquotalimits');
 
 		$quota_name= array();
 		foreach ($quota_list as $quota) array_push($quota_name, $quota['name']);
@@ -238,7 +243,7 @@ class MySQL extends Database {
 		}
 		return $result;
 
-		//return $this->__get_array_from_query('SELECT usertable.*, grouptable.groupname, ftpquotalimits.bytes_in_avail FROM usertable CROSS JOIN grouptable CROSS JOIN ftpquotalimits WHERE usertable.gid=grouptable.gid AND usertable.userid=ftpquotalimits.name ORDER BY userid', $this->connection_handle);
+		//return $this->__get_array_from_query('SELECT usertable.*, grouptable.groupname, ftpquotalimits.bytes_in_avail FROM usertable CROSS JOIN grouptable CROSS JOIN ftpquotalimits WHERE usertable.gid=grouptable.gid AND usertable.userid=ftpquotalimits.name ORDER BY userid');
 	}
 
 	/* Userview **************************************************************/
@@ -285,7 +290,7 @@ class MySQL extends Database {
 
 	function do_set_user_primarygroup($userid, $groupid) {
 		$user_data = $this->get_userlist_by_id($userid);
-		$user_data = $user_data[0];
+		$user_data = $user_data[0] ?? array('userid' => '');
 
 		$this->do_user_leavegroup($user_data['userid'], $groupid);
 
@@ -295,11 +300,11 @@ class MySQL extends Database {
 
 	function do_user_joingroup($username, $groupid) {
 		$group_data = $this->get_grouplist_by_id($groupid);
-		$group_data = $group_data[0];
+		$group_data = $group_data[0] ?? array();
 
-		if (strpos(@$group_data['members'], ',' . $username) === false) {
+		if (strpos((string)($group_data['members'] ?? ''), ',' . $username) === false) {
 			$this->log_add_debug('do_user_joingroup', 'User with username "' . $username . '" joins group with groupid ' . $groupid);
-			$this->__do_basic_query('UPDATE grouptable SET members="' . @$group_data['members'] . ',' . $username . '" WHERE gid="' . $groupid . '"');
+			$this->__do_basic_query('UPDATE grouptable SET members="' . ($group_data['members'] ?? '') . ',' . $username . '" WHERE gid="' . $groupid . '"');
 		} else {
 			$this->log_add_debug('do_user_joingroup', 'User with username "' . $username . '" tries to join group with groupid ' . $groupid . ', but is allready a member.');
 		}
@@ -307,10 +312,10 @@ class MySQL extends Database {
 
 	function do_user_leavegroup($username, $groupid) {
 		$group_data = $this->get_grouplist_by_id($groupid);
-		$group_data = $group_data[0];
+		$group_data = $group_data[0] ?? array();
 
 		// Undefined function stripos...(PHP5)
-		if (strpos(@$group_data['members'], ',' . $username) === false) {
+		if (strpos((string)($group_data['members'] ?? ''), ',' . $username) === false) {
 			$this->log_add_debug('do_user_leavegroup', 'User with username "' . $username . '" tries to leave the group with groupid ' . $groupid . ', but wasn\'t a member.');
 		} else {
 			$this->log_add_debug('do_user_leavegroup', 'User with username "' . $username . '" left the group with groupid ' . $groupid . '.');
@@ -351,19 +356,20 @@ class MySQL extends Database {
 							  '", docroot="' . $homedir .
 							  '", user_id="' . $uid . '"');
 
-		if ($pdns == 1 && $type!='' && $content!='' && $ttl!='' && $prio!='') {
+		if ($pdns == 1 && $type!='' && $content!='' && $ttl!='' && $prio!='' && substr_count($username, '.') >= 1) {
 		    $domain_fix = explode('.', $username);
 		    $domain_name = $domain_fix[count($domain_fix)-2].".".$domain_fix[count($domain_fix)-1];
 		    $z = count($domain_fix) - 3;
 			for ($i=2; $i<=count($domain_fix); $i++) {
-			        $sql = mysqli_query($this->connection_handle, 'SELECT id FROM domains WHERE name = "'. $domain_name .'"');
-				if (mysqli_num_rows($sql) > 0) {
-				    $data = mysqli_fetch_array($sql);
+			        $sql = $this->__query('SELECT id FROM domains WHERE name = "'. $domain_name .'"');
+				if ($this->__num_rows($sql) > 0) {
+				    $data = $this->__fetch($sql);
 					$this->__do_basic_query('INSERT INTO records SET domain_id="'. $data['id'] .'", name="'. $username .'", type="'. $type .'", content="'. $content.'", ttl="'. $ttl .'", prio="'. $prio .'"');
 					$this->__do_basic_query('INSERT INTO records SET domain_id="'. $data['id'] .'", name="'. $wwwalias .'", type="'. $type .'", content="'. $content.'", ttl="'. $ttl .'", prio="'. $prio .'"');
 				    $i = count($domain_fix) + 1;
 				    return true;
 				} else {
+				    if ($z < 0) break;
 				    $domain_name = $domain_fix[$z].".".$domain_name;
 				    $z--;
 				}
@@ -381,17 +387,17 @@ class MySQL extends Database {
 		$this->log_add_debug('do_delete_one_vhuser', 'Deleting one vhost with a name "' . $vhostname . '"');
 		$this->__do_basic_query('DELETE FROM vhtable WHERE servername="' . $vhostname . '"');
 		if ($pdns == 1) {
-		$sql = mysqli_query($this->connection_handle, 'SELECT id FROM records WHERE name = "'. $vhostname .'" AND type = "A" OR name = "'. $vhostname .'" AND type = "CNAME"');
-		    if (mysqli_num_rows($sql) > 0) {
-			$record_id = mysqli_fetch_array($sql);
+		$sql = $this->__query('SELECT id FROM records WHERE name = "'. $vhostname .'" AND type = "A" OR name = "'. $vhostname .'" AND type = "CNAME"');
+		    if ($this->__num_rows($sql) > 0) {
+			$record_id = $this->__fetch($sql);
 			$this->__do_basic_query('DELETE FROM records WHERE id="' . $record_id['id'] . '"');
 		    }
 		}
 	}
 
 	function get_user_exists($username) {
-		$sql = mysqli_query($this->connection_handle, 'SELECT NULL FROM usertable WHERE userid="' . $username . '"');
-		if (mysqli_num_rows($sql) == 0) {
+		$sql = $this->__query('SELECT NULL FROM usertable WHERE userid="' . $username . '"');
+		if ($this->__num_rows($sql) == 0) {
 			$this->log_add_debug('get_user_exists', 'Checking for existing user "' . $username . '"... none found');
 			return false;
 		} else {
@@ -402,24 +408,24 @@ class MySQL extends Database {
 
 	function get_userlist_by_id($userid) {
 		$this->log_add_debug('get_userlist_by_id', 'Fetching data for user with id "' . $userid . '"');
-		return $this->__get_array_from_query('SELECT * FROM usertable LEFT JOIN grouptable ON usertable.gid=grouptable.gid WHERE uid = "' . $userid . '"', $this->connection_handle);
+		return $this->__get_array_from_query('SELECT * FROM usertable LEFT JOIN grouptable ON usertable.gid=grouptable.gid WHERE uid = "' . $userid . '"');
 	}
 
 	function get_associated_ipadresses($username) {
 		$this->log_add_debug('get_userlist', 'Compiling list of IP-adresses associated with the username, "' . $username . '".');
-		return $this->__get_array_from_query('SELECT address_ip FROM xfer_stat WHERE userid="' . $username . '" GROUP BY address_ip', $this->connection_handle);
+		return $this->__get_array_from_query('SELECT address_ip FROM xfer_stat WHERE userid="' . $username . '" GROUP BY address_ip');
 	}
 
 	function get_userquota_by_id($username) {
 		$this->log_add_debug('get_userquota_by_id', 'Getting quota-settings for the username, "' . $username . '".');
 		$result = array();
 
-		$totals = $this->__get_array_from_query('SELECT * FROM ftpquotalimits WHERE name = "' . $username . '"', $this->connection_handle);
+		$totals = $this->__get_array_from_query('SELECT * FROM ftpquotalimits WHERE name = "' . $username . '"');
 		if (count($totals) == 0) {
 			$result['have_quota'] = false;
 			return $result;
 		} else {
-			$used = $this->__get_array_from_query('SELECT * FROM ftpquotatallies WHERE name = "' . $username . '"', $this->connection_handle);
+			$used = $this->__get_array_from_query('SELECT * FROM ftpquotatallies WHERE name = "' . $username . '"');
 			if (count($used) == 0) {
 				$result['used']['bytes_in_used']	= 0;
 				$result['used']['bytes_out_used']	= 0;
@@ -439,32 +445,32 @@ class MySQL extends Database {
 
   	function get_vhuser_by_id($uid) {
 		$this->log_add_debug('get_vhuser_by_id', 'Getting list of vhosts associated with the userid, "' . $uid . '".');
-		return $this->__get_array_from_query('SELECT * FROM vhtable WHERE user_id="' . $uid . '"', $this->connection_handle);
+		return $this->__get_array_from_query('SELECT * FROM vhtable WHERE user_id="' . $uid . '"');
 	}
 
   	/* PowerDNS **************************************************************/
 	function get_pdns_domains() {
 		$this->log_add_debug('get_pdns_domains', 'Fetching all domains from pdns database');
-		return $this->__get_array_from_query('SELECT * FROM domains ORDER BY name', $this->connection_handle);
+		return $this->__get_array_from_query('SELECT * FROM domains ORDER BY name');
 	}
 
 	function get_domain_id($dname) {
-		$sql = mysqli_query($this->connection_handle, 'SELECT id FROM domains WHERE name="' . $dname . '";');
-		$data = mysqli_fetch_array($sql);
+		$sql = $this->__query('SELECT id FROM domains WHERE name="' . $dname . '";');
+		$data = $this->__fetch($sql);
 			$this->log_add_debug('get_domain_id', 'Fetching domain id from pdns database');
-			return $data["id"];
+			return $data["id"] ?? null;
 	}
 
 	function get_pdns_domain_edit_details($domain_id) {
-		$sql = mysqli_query($this->connection_handle, 'SELECT * FROM domains WHERE id="' . $domain_id . '";');
-		$data = mysqli_fetch_array($sql);
+		$sql = $this->__query('SELECT * FROM domains WHERE id="' . $domain_id . '";');
+		$data = $this->__fetch($sql);
 			$this->log_add_debug('get_pdns_domain_edit_details', 'Fetching domain data from pdns database');
-			return $data;
+			return $data ?: array();
 	}
 
 	function get_pdns_domain_details($domainname) {
 		$this->log_add_debug('get_pdns_domain_details', 'Fetching details for domain "'. $domainname  .'"');
-		return $this->__get_array_from_query('SELECT domains.id, records.* FROM domains LEFT JOIN records ON domains.id=records.domain_id WHERE domains.name= "'. $domainname  .'" ORDER BY records.type DESC', $this->connection_handle);
+		return $this->__get_array_from_query('SELECT domains.id, records.* FROM domains LEFT JOIN records ON domains.id=records.domain_id WHERE domains.name= "'. $domainname  .'" ORDER BY records.type DESC');
 	}
 
 	function do_add_new_domain_record($domain_id, $domain_root, $domain_name, $domain_type, $domain_content, $domain_ttl, $domain_prio) {
@@ -512,7 +518,7 @@ class MySQL extends Database {
 	/* Grouplist *************************************************************/
 	function get_grouplist() {
 		$this->log_add_debug('get_grouplist', 'Fetching data for groups');
-		return $this->__get_array_from_query('SELECT * FROM grouptable ORDER by groupname', $this->connection_handle);
+		return $this->__get_array_from_query('SELECT * FROM grouptable ORDER by groupname');
 	}
 
 	function do_add_group($groupname, $description = "") {
@@ -521,8 +527,8 @@ class MySQL extends Database {
 	}
 
 	function get_group_exists($groupname) {
-		$sql = mysqli_query($this->connection_handle, 'SELECT NULL FROM grouptable WHERE groupname="' . $groupname . '"');
-		if (mysqli_num_rows($sql) == 0) {
+		$sql = $this->__query('SELECT NULL FROM grouptable WHERE groupname="' . $groupname . '"');
+		if ($this->__num_rows($sql) == 0) {
 			$this->log_add_debug('get_group_exists', 'Checking for existing group "' . $groupname . '"... none found');
 			return false;
 		} else {
@@ -539,7 +545,7 @@ class MySQL extends Database {
 
 	function get_grouplist_by_id($groupid) {
 		$this->log_add_debug('get_grouplist_by_id', 'Fetching data for group with id "' . $groupid . '"');
-		return $this->__get_array_from_query('SELECT * FROM grouptable WHERE gid = "' . $groupid . '"', $this->connection_handle);
+		return $this->__get_array_from_query('SELECT * FROM grouptable WHERE gid = "' . $groupid . '"');
 	}
 
 	function do_delete_group($groupid) {
@@ -549,14 +555,14 @@ class MySQL extends Database {
 
 	function get_groupmembers_main($groupid) {
 		$this->log_add_debug('get_groupmembers_main', 'Fetching list of users that has a group with groupid, "' . $groupid . '", set as their primary group.');
-		return $this->__get_array_from_query('SELECT userid, uid FROM usertable WHERE gid="' . $groupid . '"', $this->connection_handle);
+		return $this->__get_array_from_query('SELECT userid, uid FROM usertable WHERE gid="' . $groupid . '"');
 	}
 
 
 	/* Statistics ************************************************************/
 	function get_stats_bycommand($command) {
 		$this->log_add_debug('get_stats_bycommand', 'Compiling statistics based on the command, "' . $command . '".');
-		return $this->__get_array_from_query('SELECT xfer_stat.userid, uid, sum(size) AS bytes , count(*) AS files, lastlogin FROM xfer_stat LEFT JOIN usertable ON usertable.userid=xfer_stat.userid WHERE command="' . $command . '" AND cmd="c" GROUP BY userid ORDER BY bytes DESC LIMIT ' . $GLOBALS['config_toplist_num_names'], $this->connection_handle);
+		return $this->__get_array_from_query('SELECT xfer_stat.userid, uid, sum(size) AS bytes , count(*) AS files, lastlogin FROM xfer_stat LEFT JOIN usertable ON usertable.userid=xfer_stat.userid WHERE command="' . $command . '" AND cmd="c" GROUP BY userid ORDER BY bytes DESC LIMIT ' . $GLOBALS['config_toplist_num_names']);
 	}
 
 	function get_stats_bytimestamp($username = "total") {
@@ -597,7 +603,7 @@ class MySQL extends Database {
 		$this->log_add_debug('do_delete_logs', 'Deleting all log-items older than ' . $date);
 
 		$this->__do_basic_query('DELETE FROM xfer_stat WHERE time <= "' . $date . '"');
-		return mysqli_affected_rows($this->connection_handle);
+		return $this->is_ready() ? mysqli_affected_rows($this->connection_handle) : 0;
 	}
 
 	function get_transfer_logs($date) {
@@ -607,6 +613,11 @@ class MySQL extends Database {
 	}
 
 	/* Status ****************************************************************/
+	function get_server_info() {
+		if (!$this->connected) return 'N.A.';
+		return mysqli_get_server_info($this->connection_handle);
+	}
+
 	function get_db_status() {
 		$this->log_add_debug('get_db_status', 'Compiling statistics based on database status.');
 		$result = array();
@@ -713,8 +724,8 @@ class MySQL extends Database {
 	function __get_stats_bytimestamp($label, $query) {
 		$this->log_add_debug('__get_stats_' . str_replace(' ', '_', $label), $query);
 		$data = array();
-		$query = mysqli_query($this->connection_handle, $query);
-		while ($row = mysqli_fetch_array($query)) $data[$row["command"]] = $row;
+		$result = $this->__query($query);
+		while ($row = $this->__fetch($result)) $data[$row["command"]] = $row;
 		$data['label'] = $label;
 		return $data;
 	}
@@ -725,36 +736,53 @@ class MySQL extends Database {
 		} else {
 			$this->log_add_debug('__do_basic_query', $query);
 
-			mysqli_query($this->connection_handle,$query);
-			if (strlen(mysqli_error($this->connection_handle)) > 0) {
+			if (mysqli_query($this->connection_handle, $query) === false) {
 				$this->log_additem('__do_basic_query', 	'SQL: ' . $query);
 				$this->log_additem('__do_basic_query', 	'SQL-error: ' . mysqli_error($this->connection_handle));
 			}
 		}
 	}
 
+	/* Runs a query and returns the mysqli_result (or true/false for statements
+	 * without result set). Never passes a null handle to mysqli (TypeError in PHP 8). */
+	function __query($query) {
+		if (!$this->is_ready()) {
+			$this->log_additem('__query', 'Connection to database not ready!');
+			return false;
+		}
+		$result = mysqli_query($this->connection_handle, $query);
+		if ($result === false) {
+			$this->log_additem('__query', 'SQL: ' . $query);
+			$this->log_additem('__query', 'SQL-error: ' . mysqli_error($this->connection_handle));
+		}
+		return $result;
+	}
+
+	function __num_rows($result) {
+		return ($result instanceof mysqli_result) ? mysqli_num_rows($result) : 0;
+	}
+
+	function __fetch($result) {
+		return ($result instanceof mysqli_result) ? mysqli_fetch_array($result) : null;
+	}
+
 	function __get_oneresult_from_query($query) {
 		$this->log_add_debug('__get_oneresult_from_query', $query);
 		$result = array();
 
-		$sql = mysqli_query($this->connection_handle, $query);
-		if (strlen(mysqli_error($this->connection_handle)) > 0) {
-				$this->log_additem('__get_oneresult_from_query', 'SQL-error: ' . mysqli_error($this->connection_handle));
-				return $result;
-		}
+		$sql = $this->__query($query);
+		if (!($sql instanceof mysqli_result)) return $result;
 
-		return mysqli_fetch_array($sql);
+		$row = mysqli_fetch_array($sql);
+		return $row ?? $result;
 	}
 
 	function __get_array_from_query($query) {
 		$this->log_add_debug('__get_array_from_query', $query);
 		$result = array();
 
-		$sql = mysqli_query($this->connection_handle, $query);
-		if (strlen(mysqli_error($this->connection_handle)) > 0) {
-				$this->log_additem('__get_array_from_query', 'SQL-error: ' . mysqli_error($this->connection_handle));
-				return $result;
-		}
+		$sql = $this->__query($query);
+		if (!($sql instanceof mysqli_result)) return $result;
 
 		while ($row = mysqli_fetch_array($sql) ) array_push($result, $row);
 		return $result;

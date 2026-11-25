@@ -52,7 +52,7 @@ if (isset($_GET["section"]) && $_GET["section"] == "delete" && isset($_GET["dele
 ?>
 	<table class="box">
 		<tr>
-			<td class="box-headline">&gt;&gt; <?php echo strtoupper($res_data['groupname'][0]) . substr($res_data['groupname'], 1); ?></td>
+			<td class="box-headline">&gt;&gt; <?php echo ucfirst((string)$res_data['groupname']); ?></td>
 		</tr>
 		<tr>
 			<td>
@@ -75,7 +75,7 @@ if (isset($_GET["section"]) && $_GET["section"] == "delete" && isset($_GET["dele
 
 
 						// Add users that has an additional membership in this group
-						$add_names = explode(",", $res_data["members"]);
+						$add_names = explode(",", (string)$res_data["members"]);
 						foreach($add_names as $name) {
 							if (strlen($name) == 0) continue;
 							else {

@@ -5,7 +5,6 @@ class MySQL_OLD extends MySQL {
 	//function MySQL_OLD() {
 	public function __construct() {
 		/* Run constructor for parent class to make sure variables are set. */
-		new MySQL();
 		parent::__construct();
 		
 		$this->log_add_debug('Initialization', 'Class: MySQL_OLD');
@@ -21,7 +20,7 @@ class MySQL_OLD extends MySQL {
 							  $expiration . '", disabled="' . $disabled . '", det_name="' . @$name .
 							  '", det_mail="' . @$mail . '", det_adress="' . @$address .
 							  '", det_notes="' . @$notes . '"');
-		$this->last_added_userid = mysqli_insert_id($this->connection_handle);
+		$this->last_added_userid = $this->is_ready() ? mysqli_insert_id($this->connection_handle) : -1;
 	}
 
 	function do_set_user_password($userid, $password) {

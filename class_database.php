@@ -8,15 +8,16 @@ class Database {
 	public bool $debug_mode = false;
 	public bool $connected = false;
 	public bool $selected_database = false;
- 	public object $connection_handle;
-	var $error_log 			= array();
-	var $last_added_userid  = -1;
+	/* Must be nullable: it stays null until do_connect() succeeds. */
+	public ?mysqli $connection_handle = null;
+	public array $error_log 			= array();
+	public int|string $last_added_userid  = -1;
 
 	public function __construct(){
-		$this->db_host 		= $GLOBALS['config_database_host'];
-		$this->db_username 	= $GLOBALS['config_database_user'];
-		$this->db_password 	= $GLOBALS['config_database_passord'];
-		$this->db_database 	= $GLOBALS['config_database_database'];
+		$this->db_host 		= (string)($GLOBALS['config_database_host'] ?? '');
+		$this->db_username 	= (string)($GLOBALS['config_database_user'] ?? '');
+		$this->db_password 	= (string)($GLOBALS['config_database_passord'] ?? '');
+		$this->db_database 	= (string)($GLOBALS['config_database_database'] ?? '');
 		$this->debug_mode			= false;
 		$this->connected			= false;
 		$this->selected_database		= false;
@@ -32,12 +33,12 @@ class Database {
 		return count($this->error_log) != 0;
 	}
 
-	function log_additem($category = "", $description) {
+	function log_additem($category, $description) {
 		$item = array("category" => $category, "description" => $description, 'debug' => false);
 		array_push($this->error_log, $item);
 	}
 
-	function log_add_debug($category = "", $description) {
+	function log_add_debug($category, $description) {
 		if ($this->debug_mode) {
 			$item = array('category' => $category, 'description' => $description, 'debug' => true);
 			array_push($this->error_log, $item);
@@ -137,6 +138,7 @@ class Database {
 
 	// Status
 	function get_db_status() { $this->log_additem('get_db_status', 'Function not implemented yet!'); }
+	function get_server_info() { return 'N.A.'; }
 
 	// User information
 	function get_authentication_uid($username, $password) { $this->log_additem('get_authentication_uid', 'Function not implemented yet!'); }

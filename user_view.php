@@ -5,9 +5,10 @@ doHeader();
 $cmd_output = '';
 $sel_ok = false;
 $res_data = array();
+$quota_data = array('have_quota' => false);
 
 if ((isset($_POST["frm_nvhname"]) && $_POST["frm_nvhname"]!='') AND (isset($_POST["frm_nvhpath"]) && $_POST["frm_nvhpath"]!='') AND (isset($_POST["frm_uid"]) && $_POST["frm_uid"]!='')) {
-	if (!$db->do_add_vhuser($_POST["frm_nvhname"], $_POST["frm_nvhpath"], $_POST["frm_uid"], $config_ext['pdns']['enabled'], $_POST["frm_record_type"], $_POST["frm_record_content"], $_POST["frm_record_ttl"], $_POST["frm_record_prio"])) {
+	if (!$db->do_add_vhuser($_POST["frm_nvhname"], $_POST["frm_nvhpath"], $_POST["frm_uid"], $config_ext['pdns']['enabled'], $_POST["frm_record_type"] ?? '', $_POST["frm_record_content"] ?? '', $_POST["frm_record_ttl"] ?? '', $_POST["frm_record_prio"] ?? '')) {
 	    $exists = 0;
 	} else {
 	    $exists = 1;
@@ -47,7 +48,7 @@ if (isset($_GET["viewID"]) && strlen($_GET["viewID"]) != 0) {
 	}
 
 	if (isset($_POST["frm_disabled"])) {
-		$db->do_set_user($_GET["viewID"], $_POST["frm_shell"], $_POST["frm_disabled"], $_POST["frm_homedir"], @$_POST["frm_name"], @$_POST["frm_mail"], @$_POST["frm_adress"], @$_POST["frm_notes"]);
+		$db->do_set_user($_GET["viewID"], $_POST["frm_shell"] ?? '', $_POST["frm_disabled"], $_POST["frm_homedir"] ?? '', $_POST["frm_name"] ?? '', $_POST["frm_mail"] ?? '', $_POST["frm_adress"] ?? '', $_POST["frm_notes"] ?? '');
 	}
 
 	if (isset($_POST["frm_password1"]) && isset($_POST["frm_password2"]) && strlen($_POST["frm_password2"]) != 0 && $_POST["frm_password1"] == $_POST["frm_password2"]) {
@@ -78,8 +79,9 @@ if (isset($_GET["section"]) && $_GET["section"] == "delete" && isset($_GET["dele
 	$db->do_delete_user($_GET["viewID"]);
 
 	if ($config_deleteuser_command != '') {
-		$params = '"' . $res_data["userid"] . '" "' . $res_data["uid"] . '" "' . $res_data["gid"] . '" "' . $res_data["homedir"] . '" "' . $res_data["det_mail"] . '"';
-		$cmd_output = shell_exec($config_deleteuser_command . ' ' . $params . ' 2>&1');
+		/* escapeshellarg(): database values must never reach the shell unescaped. */
+		$params = escapeshellarg((string)$res_data["userid"]) . ' ' . escapeshellarg((string)$res_data["uid"]) . ' ' . escapeshellarg((string)$res_data["gid"]) . ' ' . escapeshellarg((string)$res_data["homedir"]) . ' ' . escapeshellarg((string)$res_data["det_mail"]);
+		$cmd_output = (string)shell_exec($config_deleteuser_command . ' ' . $params . ' 2>&1');
 	}
 	?>
 	<table class="box">
@@ -143,7 +145,7 @@ if ($config_ext['quota']['enabled'] == 1) {
 	}
 
 	$quota_data = $db->get_userquota_by_id($res_data['userid']);
-	if ($quota_data['have_quota'] == false) {
+	if (empty($quota_data['have_quota'])) {
 		if (isset($_GET['section']) && $_GET['section'] == 'add_quota') {
 			$db->do_add_default_quota($res_data['userid']);
 			$_GET['section'] = 'quota';
@@ -153,9 +155,9 @@ if ($config_ext['quota']['enabled'] == 1) {
 	} else {
 		/* Check if we got an update for the users quota limits */
 		if (isset($_POST['frm_quota_turndefaultlimit']) || isset($_POST['frm_quota_up_mb'])) {
-			$db->do_set_quota($res_data['userid'], $_POST['frm_quota_turndefaultpersession'],
-				$_POST['frm_quota_turndefaultlimit'], mb2byte($_POST['frm_quota_up_mb']), mb2byte($_POST['frm_quota_down_mb']),
-				mb2byte($_POST['frm_quota_trans_mb']), $_POST['frm_quota_up_files'], $_POST['frm_quota_down_files'], $_POST['frm_quota_trans_files']);
+			$db->do_set_quota($res_data['userid'], $_POST['frm_quota_turndefaultpersession'] ?? '',
+				$_POST['frm_quota_turndefaultlimit'] ?? '', mb2byte($_POST['frm_quota_up_mb'] ?? 0), mb2byte($_POST['frm_quota_down_mb'] ?? 0),
+				mb2byte($_POST['frm_quota_trans_mb'] ?? 0), $_POST['frm_quota_up_files'] ?? 0, $_POST['frm_quota_down_files'] ?? 0, $_POST['frm_quota_trans_files'] ?? 0);
 
 			$quota_data = $db->get_userquota_by_id($res_data['userid']);
 		}
@@ -164,7 +166,7 @@ if ($config_ext['quota']['enabled'] == 1) {
 ?>
 	<table class="box">
 		<tr>
-			<td class="box-headline">&gt;&gt; <?php echo strtoupper($res_data['userid'][0]) . substr($res_data['userid'], 1); ?></td>
+			<td class="box-headline">&gt;&gt; <?php echo ucfirst((string)$res_data['userid']); ?></td>
 		</tr>
 		<tr>
 			<td>
@@ -196,7 +198,7 @@ if ($config_ext['quota']['enabled'] == 1) {
 						echo '<a href="group_view.php?viewID=' . $res_data['gid'] . '"><span class="primarygroup">' .  $res_data['groupname'] . '</span></a>';
 						if (isset($group_list["members"][$res_data["userid"]])) {
 							foreach($group_list["members"][$res_data["userid"]] as $group) {
-								echo ', <a href="group_view.php?viewID=' . $group_list['names'][$group] . '">' . $group . '</a>';
+								echo ', <a href="group_view.php?viewID=' . ($group_list['names'][$group] ?? '') . '">' . $group . '</a>';
 							}
 						}
 					?>
@@ -227,7 +229,7 @@ if ($config_ext['quota']['enabled'] == 1) {
 					<td width="100"  class="box-sel" align="left"><?php echo $res_data["det_name"]; ?></td>
 					<td width="*"  class="box-sel">&nbsp;</td>
 					<td width="110"  class="box-sel-head" align="left" valign="top"><?php echo $GLOBALS['language']['general']['adress']; ?>:</td>
-					<td width="100"  class="box-sel" align="left" rowspan="3" valign="top"><?php echo str_replace("\n", '<br>', $res_data["det_adress"]); ?></td>
+					<td width="100"  class="box-sel" align="left" rowspan="3" valign="top"><?php echo str_replace("\n", '<br>', (string)$res_data["det_adress"]); ?></td>
 					<td width="*"  class="box-sel">&nbsp;</td>
 					<td width="110"   class="box-sel-head" align="left" valign="top"><?php echo $GLOBALS['language']['general']['notes']; ?>:</td>
 					<td width="100"  class="box-sel" align="left" rowspan="3" valign="top"><?php echo format_longdetail($res_data["det_notes"]); ?></td>
@@ -296,6 +298,7 @@ if ($config_ext['quota']['enabled'] == 1) {
 		</tr>
 	</table>
 <?php
+$user_menu = array();
 $user_menu[$GLOBALS['language']['menu']['traffic']]			= $_SERVER['PHP_SELF'] . '?viewID=' . $_GET["viewID"] . '&amp;section=traffic';
 $user_menu[$GLOBALS['language']['menu']['section']]			= $_SERVER['PHP_SELF'] . '?viewID=' . $_GET["viewID"] . '&amp;section=section';
 $user_menu[$GLOBALS['language']['menu']['transfer_log']]	= $_SERVER['PHP_SELF'] . '?viewID=' . $_GET["viewID"] . '&amp;section=transferlog';
@@ -318,6 +321,7 @@ unset($user_menu);
 		</tr>
 	</table>
 <?php
+$user_menu = array();
 $user_menu[$GLOBALS['language']['userv']['geninfo']]		= $_SERVER['PHP_SELF'] . '?viewID=' . $_GET["viewID"] . '&amp;section=alter';
 $user_menu[$GLOBALS['language']['general']['groups']]		= $_SERVER['PHP_SELF'] . '?viewID=' . $_GET["viewID"] . '&amp;section=groups';
 $user_menu[$GLOBALS['language']['userv']['set_password']]	= $_SERVER['PHP_SELF'] . '?viewID=' . $_GET["viewID"] . '&amp;section=password';
@@ -345,7 +349,7 @@ if (isset($_GET["section"]) and $_GET["section"] == "section") {
 
 if (isset($_GET["section"]) and $_GET["section"] == "transferlog") {
 	$logskip = 0;
-	if (isset($_GET["logskip"]) && $_GET["logskip"] !=0) $logskip = $_GET["logskip"];
+	if (isset($_GET["logskip"]) && $_GET["logskip"] !=0) $logskip = max(0, (int)$_GET["logskip"]);
 
 	make_logviewer($logskip, $_SERVER['PHP_SELF'] . '?viewID=' . $_GET["viewID"] . '&amp;section=transferlog&amp;', $res_data["userid"]);
 }
@@ -358,13 +362,13 @@ if (isset($_GET["section"]) and $_GET["section"] == "vhuser")		include('user_vie
 doFooter();
 
 function format_longdetail($detail) {
-	return wordwrap($detail, 25, "<br>", 1);
+	return wordwrap((string)$detail, 25, "<br>", true);
 }
 
 function make_quota_graph($label, $used, $total) {
 	global $config_style_name;
 
-	$percent= (int)(($used / $total) * 100);
+	$percent= ($total > 0) ? (int)(($used / $total) * 100) : 0;
 	if ($percent > 100) $percent = 100;
 
 	$color	= getColor($percent);

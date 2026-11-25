@@ -84,16 +84,16 @@ function show_resource($res_data, $decimals = 0) {
 	foreach($res_data as $mpoint) {
 		resource_row($mpoint, $decimals);
 
-		$hd_free += $mpoint["megabyte_free"];
-		$hd_used += $mpoint["megabyte_used"];
-		$hd_size += $mpoint["megabyte_total"];
+		$hd_free += (float)$mpoint["megabyte_free"];
+		$hd_used += (float)$mpoint["megabyte_used"];
+		$hd_size += (float)$mpoint["megabyte_total"];
 	}
 
 	$mpoint["mountpoint"] 		= $GLOBALS['language']['status']['res_totalt'];
 	$mpoint["megabyte_free"] 	= $hd_free;
 	$mpoint["megabyte_used"] 	= $hd_used;
 	$mpoint["megabyte_total"] 	= $hd_size;
-	$mpoint["percent_used"] 	= (int)($hd_used * 100 / $hd_size);
+	$mpoint["percent_used"] 	= ($hd_size > 0) ? (int)($hd_used * 100 / $hd_size) : 0;
 
 	echo '<tr><td colspan="6" class="box-pl" style="font-size: 2px;">&nbsp;</td></tr>';
 	echo '<tr><td colspan="6" class="box-sel" style="font-size: 2px;">&nbsp;</td></tr>';
@@ -104,15 +104,15 @@ function resource_row($mpoint, $decimals = 0) {
 	global $config_style_name;
 
 	$color = getColor($mpoint["percent_used"]);
-	$percent = ($mpoint["percent_used"] * 300 / 100);
+	$percent = ((float)$mpoint["percent_used"] * 300 / 100);
 
 	echo '<tr onmouseover="if (typeof(this.style) != \'undefined\') this.className = \'overRow\';" onmouseout="if (typeof(this.style) != \'undefined\') this.className = \'\'">';
 	echo '<td width="*"   class="box-sel">' . $mpoint["mountpoint"] . '</td>';
 	echo '<td width="310" class="box-sel" align="center"><img src="style/' . $config_style_name . '/' . $color . '.gif" width="' . $percent . '" height="8" class="bar-left"><img src="style/' . $config_style_name . '/black.gif" width="' . (300 - $percent) . '" height="8" class="bar-right"></td>';
 	echo '<td width="30"  class="box-sel" align="right">' . $mpoint["percent_used"] . ' %</td>';
-	echo '<td width="80"  class="box-sel" align="right">' . number_format($mpoint["megabyte_free"], 	$decimals, " ", " ") . ' MB</td>';
-	echo '<td width="80"  class="box-sel" align="right">' . number_format($mpoint["megabyte_used"], 	$decimals, " ", " ") . ' MB</td>';
-	echo '<td width="80"  class="box-sel" align="right">' . number_format($mpoint["megabyte_total"], 	$decimals, " ", " ") . ' MB</td>';
+	echo '<td width="80"  class="box-sel" align="right">' . number_format((float)$mpoint["megabyte_free"], 	$decimals, " ", " ") . ' MB</td>';
+	echo '<td width="80"  class="box-sel" align="right">' . number_format((float)$mpoint["megabyte_used"], 	$decimals, " ", " ") . ' MB</td>';
+	echo '<td width="80"  class="box-sel" align="right">' . number_format((float)$mpoint["megabyte_total"], 	$decimals, " ", " ") . ' MB</td>';
 	echo '</tr>';
 }
 ?>

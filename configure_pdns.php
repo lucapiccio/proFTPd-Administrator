@@ -1,6 +1,12 @@
 <?php
 require_once('include_prepare.php');
 
+/* Initialise variables that PHP 5 silently treated as null. */
+$domain = '';
+$domain_id = '';
+$new_domain = 0;
+$master_ip = '';
+
 if ((isset($_GET['domain_name']) && $_GET['domain_name']!='') AND (isset($_GET['domain_id']) && $_GET['domain_id']!='') AND (isset($_GET['deletion_confirmed']) && $_GET['deletion_confirmed']==1)) {
 		$db->do_delete_whole_domain($_GET['domain_id'], $_GET['domain_name']);
 }
@@ -100,9 +106,9 @@ if (isset($_POST['frm_pdns_domainname']) && $_POST['frm_pdns_domainname']!='') {
 		</form>
 		</td>
 	</tr>
-	<?php } if (($domain) AND (!isset($_GET['edite'])) || $_GET['edite']!=1) {
+	<?php } if (($domain) AND (!isset($_GET['edite'])) || ($_GET['edite'] ?? null) != 1) {
 	    $domain_details = $db->get_pdns_domain_details($domain);
-		if (count($domain_details[0]['id'])>0) {
+		if (!empty($domain_details[0]['id'])) {
 	?>
 	<tr>
 		<td>
@@ -135,9 +141,9 @@ if (isset($_POST['frm_pdns_domainname']) && $_POST['frm_pdns_domainname']!='') {
 	</tr>
 	<?php } else { 
 		if ($new_domain) {
-		pdns_notify($language['configure']['pdns_new_domain_records'], black);
+		pdns_notify($language['configure']['pdns_new_domain_records'], 'black');
 		} else {
-		pdns_notify($language['configure']['pdns_no_domain_records'], black);
+		pdns_notify($language['configure']['pdns_no_domain_records'], 'black');
 		}
 	    }
 	?>
@@ -155,21 +161,21 @@ if (isset($_POST['frm_pdns_domainname']) && $_POST['frm_pdns_domainname']!='') {
 					<td class="box-subheadline" width="50">Priority</td>
 				</tr>
 				<tr>
-					<td class="box-sel"><input type="text" name="frm_domain_name" style="width: 150px;" value="<? if (isset($_GET['edit']) && $_GET['edit']==1) { echo $_GET['name']; } else { echo $domain; } ?>"></td>
+					<td class="box-sel"><input type="text" name="frm_domain_name" style="width: 150px;" value="<?php if (isset($_GET['edit']) && $_GET['edit']==1) { echo $_GET['name']; } else { echo $domain; } ?>"></td>
 					<td class="box-sel">
 						<select name="frm_domain_type" style="width: 65px;">
 							<?php
 								foreach($config_valid_pdns_record_types as $types) {
 									echo '<option value="' . $types . '"';
-									if ((isset($_GET['edit']) && $_GET['edit']==1) AND $_GET['type'] == $types) echo 'selected';
+									if ((isset($_GET['edit']) && $_GET['edit']==1) AND ($_GET['type'] ?? '') == $types) echo 'selected';
 									echo '>' . $types . '</option>';
 								}
 							?>
 						</select>
 					</td>					
-					<td class="box-sel"><input type="text" name="frm_domain_content" style="width: 355px;" value="<? if (isset($_GET['edit']) && $_GET['edit']==1) echo $_GET['cont'];?>"></td>
-					<td class="box-sel"><input type="text" name="frm_domain_ttl" style="width: 50px;" value="<? if (isset($_GET['edit']) && $_GET['edit']==1) echo $_GET['ttl'];?>"></td>
-					<td class="box-sel"><input type="text" name="frm_domain_prio" style="width: 50px;" value="<? if (isset($_GET['edit']) && $_GET['edit']==1) echo $_GET['prio'];?>"></td>
+					<td class="box-sel"><input type="text" name="frm_domain_content" style="width: 355px;" value="<?php if (isset($_GET['edit']) && $_GET['edit']==1) echo $_GET['cont'];?>"></td>
+					<td class="box-sel"><input type="text" name="frm_domain_ttl" style="width: 50px;" value="<?php if (isset($_GET['edit']) && $_GET['edit']==1) echo $_GET['ttl'];?>"></td>
+					<td class="box-sel"><input type="text" name="frm_domain_prio" style="width: 50px;" value="<?php if (isset($_GET['edit']) && $_GET['edit']==1) echo $_GET['prio'];?>"></td>
 					<input type="hidden" name="frm_domain_id" value="<?=$domain_id;?>">
 					<input type="hidden" name="frm_domain_root" value="<?=$domain;?>">
 					<input type="hidden" name="frm_pdns_domainname" value="<?=$domain;?>">
@@ -184,7 +190,7 @@ if (isset($_POST['frm_pdns_domainname']) && $_POST['frm_pdns_domainname']!='') {
 		</td>
 	</tr>
 	<?php }	 else if (isset($_GET['edite']) && $_GET['edite'] == 1) { 
-	    $domain_edit = $db->get_pdns_domain_edit_details($_GET['domain_id']);
+	    $domain_edit = $db->get_pdns_domain_edit_details($_GET['domain_id'] ?? '') + array('id' => '', 'name' => '', 'type' => '', 'master' => '');
 	?>
 	<tr>
 		<td>
@@ -222,7 +228,7 @@ if ($domain && (!isset($_GET['edite']))) {
 $alter_menu[$GLOBALS['language']['menu']['reset']]	= 'javascript:document.config_pdns_domain_details.reset()';
 $alter_menu[$GLOBALS['language']['menu']['submit']]	= 'javascript:document.config_pdns_domain_details.submit()';
 doMenu($alter_menu);
-} else if ($domain && $_GET['edite'] == 1) {
+} else if ($domain && ($_GET['edite'] ?? null) == 1) {
 $alter_menu[$GLOBALS['language']['menu']['reset']]	= 'javascript:document.config_pdns_domain_edite.reset()';
 $alter_menu[$GLOBALS['language']['menu']['submit']]	= 'javascript:document.config_pdns_domain_edite.submit()';
 doMenu($alter_menu);
